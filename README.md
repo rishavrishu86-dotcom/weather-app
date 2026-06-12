@@ -2,7 +2,7 @@
 
 **By Rishav Jamwal** · Full-Stack submission (Tech Assessment **#1 frontend** + **#2 backend**) for the **PM Accelerator** AI Engineer Intern assessment.
 
-A full-stack weather app: enter any location (city, zip/postal code, landmark, or GPS coordinates) or use your current location to get **real-time weather + a 5-day forecast**, plus a **SQLite-backed CRUD** system for saving location/date-range weather queries, **data export** (JSON/CSV/XML/Markdown), and **extra API integrations** (interactive map, YouTube, Google Maps).
+A full-stack weather app: enter any location (city, zip/postal code, landmark, or GPS coordinates) or use your current location to get **real-time weather + a 5-day forecast**, plus a **SQLite-backed CRUD** system for saving location/date-range weather queries, **data export** (JSON/CSV/XML/Markdown/PDF), and **extra API integrations** (interactive map, YouTube, Google Maps).
 
 > Weather data comes from the free **[Open-Meteo](https://open-meteo.com/)** API — **no API key required**, so it runs out of the box.
 
