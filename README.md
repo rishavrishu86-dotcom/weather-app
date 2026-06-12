@@ -6,6 +6,10 @@ A full-stack weather app: enter any location (city, zip/postal code, landmark, o
 
 > Weather data comes from the free **[Open-Meteo](https://open-meteo.com/)** API — **no API key required**, so it runs out of the box.
 
+**🌐 Live demo:** [rishav-weather-app.vercel.app](https://rishav-weather-app.vercel.app) · **🎥 Demo video:** [demo/Rishav_Jamwal_Weather_App_Demo.mp4](demo/Rishav_Jamwal_Weather_App_Demo.mp4)
+
+> On the hosted demo, saved records are **ephemeral** (Vercel's serverless filesystem only allows `/tmp` writes) — full persistence works when run locally.
+
 ---
 
 ## ✅ What it does (mapped to the assessment)
@@ -71,7 +75,7 @@ Dependencies are listed in **`package.json`** (the requirements file for this No
 | `DELETE` | `/api/records/:id` | Delete |
 | `GET` | `/api/export?format=json\|csv\|xml\|md\|pdf` | Export all records (with temperatures) |
 
-> **Persistence note:** records are stored in a local SQLite file (`weather.db`). This is intentional for a "clone & run" assessment. On serverless hosting (e.g. Vercel) the filesystem is ephemeral, so a hosted demo would need a managed DB (Postgres/Turso) — a one-line swap of the DB driver.
+> **Persistence note:** records are stored in a local SQLite file (`weather.db`). This is intentional for a "clone & run" assessment. On the [live Vercel demo](https://rishav-weather-app.vercel.app) the database lives in `/tmp` (the only writable path on serverless), so hosted records are ephemeral; durable hosted persistence would need a managed DB (Postgres/Turso) — a one-line swap of the DB driver.
 
 ---
 
