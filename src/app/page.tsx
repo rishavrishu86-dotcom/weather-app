@@ -100,7 +100,7 @@ export default function Home() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="City, zip code, landmark, or 'lat,lon' (e.g. 40.71,-74.00)"
+            placeholder="Search a city, zip code, landmark, or coordinates…"
             className="flex-1 min-w-[240px] rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 outline-none focus:border-sky-500"
           />
           <button type="submit" className="rounded-lg bg-sky-600 px-5 py-2.5 font-medium hover:bg-sky-500">Search</button>
@@ -156,11 +156,11 @@ export default function Home() {
         )}
 
         <section className="mt-10 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-          <h2 className="text-xl font-semibold">📁 Saved weather queries (CRUD)</h2>
-          <p className="mt-1 text-sm text-slate-400">Store a location + date range — temperatures are fetched from a historical weather source and saved to a SQLite database.</p>
+          <h2 className="text-xl font-semibold">📁 My saved weather searches</h2>
+          <p className="mt-1 text-sm text-slate-400">Save a place and a date range to look up its past temperatures. Your saved searches are kept here — you can edit, delete, or download them anytime.</p>
 
           <form onSubmit={createRecord} className="mt-4 grid gap-3 sm:grid-cols-2">
-            <input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Location (city / zip / lat,lon)" className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" />
+            <input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Place (city, zip, or landmark)" className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" />
             <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes (optional)" className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" />
             <label className="text-sm text-slate-400">Start date<input required type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" /></label>
             <label className="text-sm text-slate-400">End date<input required type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" /></label>
@@ -169,7 +169,7 @@ export default function Home() {
           {crudMsg && <p className="mt-3 text-sm">{crudMsg}</p>}
 
           <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-slate-400">Export all:</span>
+            <span className="text-slate-400">Download your data as:</span>
             {["json", "csv", "xml", "md"].map((f) => (
               <a key={f} href={`/api/export?format=${f}`} className="rounded-md border border-slate-700 px-3 py-1 uppercase hover:bg-slate-800">{f}</a>
             ))}
@@ -234,7 +234,7 @@ export default function Home() {
           </p>
         </section>
 
-        <footer className="mt-8 text-center text-xs text-slate-600">Weather data: Open-Meteo (free, no API key) · Map: OpenStreetMap</footer>
+        <footer className="mt-8 text-center text-xs text-slate-600">Weather by Open-Meteo · Map by OpenStreetMap</footer>
       </div>
     </main>
   );
