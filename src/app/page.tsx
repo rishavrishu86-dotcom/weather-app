@@ -21,6 +21,18 @@ export default function Home() {
   const t = (c: number) => (unit === "C" ? c : c * 9 / 5 + 32);
   const popularCities = ["London", "New York", "Tokyo", "Dubai", "Mumbai", "Paris"];
 
+  // pick a background theme from the current condition + day/night
+  const skyClass = (() => {
+    if (!weather) return "";
+    const l = weather.current.label.toLowerCase();
+    if (l.includes("thunder")) return "sky-storm";
+    if (l.includes("snow")) return "sky-snow";
+    if (l.includes("rain") || l.includes("drizzle") || l.includes("shower")) return "sky-rain";
+    if (l.includes("fog") || l.includes("rime")) return "sky-fog";
+    if (l.includes("cloud") || l.includes("overcast")) return "sky-clouds";
+    return weather.current.isDay ? "sky-clear-day" : "sky-clear-night";
+  })();
+
   const fetchWeather = useCallback(async (qs: string) => {
     setLoading(true); setError("");
     try {
@@ -101,7 +113,7 @@ export default function Home() {
     : "";
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className={`sky min-h-screen text-slate-100 ${skyClass}`}>
       <div className="mx-auto max-w-4xl px-5 py-10">
         <header className="mb-8">
           <h1 className="text-3xl font-bold">🌦️ Weather Explorer</h1>
@@ -158,8 +170,8 @@ export default function Home() {
 
         {/* welcome / empty state */}
         {!weather && !loading && !error && (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-10 text-center">
-            <div className="text-5xl">🌍</div>
+          <div className="anim-fade-up mt-8 rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-10 text-center">
+            <div className="anim-float text-6xl">🌍</div>
             <p className="mt-3 text-lg font-medium">Check the weather anywhere</p>
             <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
               Search a city, zip code or landmark above, tap a suggestion, or use 📍 My location to see current conditions and the next 5 days.
@@ -168,13 +180,13 @@ export default function Home() {
         )}
 
         {weather && (
-          <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <section key={weather.place.name} className="anim-fade-up mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-md">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold">{weather.place.name}{weather.place.country ? `, ${weather.place.country}` : ""}</h2>
-                <p className="text-slate-400">{weather.current.label} · {weather.current.isDay ? "Day" : "Night"}</p>
+                <p className="text-slate-300">{weather.current.label} · {weather.current.isDay ? "Day" : "Night"}</p>
               </div>
-              <div className="text-6xl leading-none">{weather.current.icon}</div>
+              <div className="anim-float text-7xl leading-none">{weather.current.icon}</div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Stat label="Temperature" value={`${Math.round(t(weather.current.temp))}°${unit}`} />
@@ -185,8 +197,8 @@ export default function Home() {
 
             <h3 className="mt-7 mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">5-Day Forecast</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-              {weather.forecast.map((d) => (
-                <div key={d.date} className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
+              {weather.forecast.map((d, i) => (
+                <div key={d.date} className="anim-fade-up rounded-xl border border-white/10 bg-slate-950/50 p-3 text-center backdrop-blur-sm" style={{ animationDelay: `${0.1 + i * 0.08}s` }}>
                   <p className="text-xs text-slate-400">{dayName(d.date)}</p>
                   <div className="my-1 text-3xl">{d.icon}</div>
                   <p className="text-sm font-medium">{Math.round(t(d.max))}° / {Math.round(t(d.min))}°</p>
@@ -208,7 +220,7 @@ export default function Home() {
           </section>
         )}
 
-        <section className="mt-10 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <section className="mt-10 rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-md">
           <h2 className="text-xl font-semibold">📁 My saved weather searches</h2>
           <p className="mt-1 text-sm text-slate-400">Save a place and a date range to look up its past temperatures. Your saved searches are kept here — you can edit, delete, or download them anytime.</p>
 
@@ -280,7 +292,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mt-10 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <section className="mt-10 rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-md">
           <h2 className="text-xl font-semibold">ℹ️ About</h2>
           <p className="mt-2 text-slate-300"><strong>Built by Rishav Jamwal</strong> — Full-Stack Developer (React · Next.js · Node · Python). Technical assessment submission.</p>
           <p className="mt-3 text-sm leading-relaxed text-slate-400">
@@ -297,7 +309,7 @@ export default function Home() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+    <div className="rounded-xl border border-white/10 bg-slate-950/50 p-3 backdrop-blur-sm">
       <p className="text-xs text-slate-400">{label}</p>
       <p className="mt-1 text-lg font-semibold">{value}</p>
     </div>
