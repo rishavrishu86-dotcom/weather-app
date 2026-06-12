@@ -15,6 +15,11 @@ export default function Home() {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [unit, setUnit] = useState<"C" | "F">("C");
+
+  // convert a Celsius value to the chosen unit
+  const t = (c: number) => (unit === "C" ? c : c * 9 / 5 + 32);
+  const popularCities = ["London", "New York", "Tokyo", "Dubai", "Mumbai", "Paris"];
 
   const fetchWeather = useCallback(async (qs: string) => {
     setLoading(true); setError("");
@@ -59,6 +64,13 @@ export default function Home() {
     setRecords(data.records || []);
   }, []);
   useEffect(() => { loadRecords(); }, [loadRecords]);
+
+  // Pre-fill a valid past date range (data source only covers dates 5+ days ago),
+  // set on mount to avoid a server/client hydration mismatch.
+  useEffect(() => {
+    const iso = (daysAgo: number) => { const d = new Date(); d.setDate(d.getDate() - daysAgo); return d.toISOString().slice(0, 10); };
+    setForm((f) => (f.start_date || f.end_date ? f : { ...f, start_date: iso(12), end_date: iso(6) }));
+  }, []);
 
   const createRecord = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,10 +119,51 @@ export default function Home() {
           <button type="button" onClick={useMyLocation} className="rounded-lg border border-slate-700 px-4 py-2.5 hover:bg-slate-800">📍 My location</button>
         </form>
 
-        {loading && <p className="mt-4 text-slate-400">Loading…</p>}
+        {/* quick picks + unit toggle */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-slate-500">Try:</span>
+          {popularCities.map((c) => (
+            <button
+              key={c}
+              onClick={() => { setQuery(c); fetchWeather(`location=${encodeURIComponent(c)}`); }}
+              className="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-300 hover:border-sky-500 hover:text-white"
+            >
+              {c}
+            </button>
+          ))}
+          <div className="ml-auto flex items-center rounded-full border border-slate-700 p-0.5 text-sm">
+            {(["C", "F"] as const).map((u) => (
+              <button
+                key={u}
+                onClick={() => setUnit(u)}
+                className={`rounded-full px-3 py-1 ${unit === u ? "bg-sky-600 text-white" : "text-slate-400 hover:text-white"}`}
+              >
+                °{u}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loading && (
+          <div className="mt-4 flex items-center gap-3 text-slate-400">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-sky-400" />
+            Getting the latest weather…
+          </div>
+        )}
         {error && (
           <div className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300" role="alert">
             ⚠️ {error}
+          </div>
+        )}
+
+        {/* welcome / empty state */}
+        {!weather && !loading && !error && (
+          <div className="mt-8 rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-10 text-center">
+            <div className="text-5xl">🌍</div>
+            <p className="mt-3 text-lg font-medium">Check the weather anywhere</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
+              Search a city, zip code or landmark above, tap a suggestion, or use 📍 My location to see current conditions and the next 5 days.
+            </p>
           </div>
         )}
 
@@ -124,8 +177,8 @@ export default function Home() {
               <div className="text-6xl leading-none">{weather.current.icon}</div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Stat label="Temperature" value={`${Math.round(weather.current.temp)}${weather.units.temp}`} />
-              <Stat label="Feels like" value={`${Math.round(weather.current.feelsLike)}${weather.units.temp}`} />
+              <Stat label="Temperature" value={`${Math.round(t(weather.current.temp))}°${unit}`} />
+              <Stat label="Feels like" value={`${Math.round(t(weather.current.feelsLike))}°${unit}`} />
               <Stat label="Humidity" value={`${weather.current.humidity}%`} />
               <Stat label="Wind" value={`${weather.current.wind} ${weather.units.wind}`} />
             </div>
@@ -136,7 +189,7 @@ export default function Home() {
                 <div key={d.date} className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
                   <p className="text-xs text-slate-400">{dayName(d.date)}</p>
                   <div className="my-1 text-3xl">{d.icon}</div>
-                  <p className="text-sm font-medium">{Math.round(d.max)}° / {Math.round(d.min)}°</p>
+                  <p className="text-sm font-medium">{Math.round(t(d.max))}° / {Math.round(t(d.min))}°</p>
                   <p className="text-xs text-sky-400">💧 {d.rainChance ?? 0}%</p>
                 </div>
               ))}
@@ -164,7 +217,8 @@ export default function Home() {
             <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes (optional)" className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" />
             <label className="text-sm text-slate-400">Start date<input required type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" /></label>
             <label className="text-sm text-slate-400">End date<input required type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-sky-500" /></label>
-            <button className="rounded-lg bg-emerald-600 px-4 py-2 font-medium hover:bg-emerald-500 sm:col-span-2">Create record</button>
+            <p className="text-xs text-slate-500 sm:col-span-2">💡 Pick dates at least 5 days in the past — that&apos;s how far back the historical weather data goes.</p>
+            <button className="rounded-lg bg-emerald-600 px-4 py-2 font-medium hover:bg-emerald-500 sm:col-span-2">Save this search</button>
           </form>
           {crudMsg && <p className="mt-3 text-sm">{crudMsg}</p>}
 
@@ -186,7 +240,8 @@ export default function Home() {
                 {records.length === 0 && <tr><td colSpan={6} className="py-4 text-slate-500">No saved records yet.</td></tr>}
                 {records.map((r) => {
                   const temps = (() => { try { return JSON.parse(r.temps_json) as { mean: number }[]; } catch { return []; } })();
-                  const avg = temps.length ? (temps.reduce((s, t) => s + (t.mean ?? 0), 0) / temps.length).toFixed(1) : "—";
+                  const avgC = temps.length ? temps.reduce((s, x) => s + (x.mean ?? 0), 0) / temps.length : null;
+                  const avg = avgC === null ? "—" : `${Math.round(t(avgC))}°${unit}`;
                   const editing = editId === r.id;
                   return (
                     <tr key={r.id} className="border-b border-slate-800/60 align-top">
@@ -200,7 +255,7 @@ export default function Home() {
                           </div>
                         ) : `${r.start_date} → ${r.end_date}`}
                       </td>
-                      <td className="pr-3">{avg}°C</td>
+                      <td className="pr-3">{avg}</td>
                       <td className="pr-3">
                         {editing ? <input defaultValue={r.notes} onChange={(e) => setEditVals((v) => ({ ...v, notes: e.target.value }))} className="rounded border border-slate-700 bg-slate-950 px-1" /> : (r.notes || "—")}
                       </td>
