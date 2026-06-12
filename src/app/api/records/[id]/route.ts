@@ -36,6 +36,11 @@ export async function PUT(req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "Dates must be valid (YYYY-MM-DD)." }, { status: 400 });
   if (start > end)
     return NextResponse.json({ error: "Start date must be on or before the end date." }, { status: 400 });
+  // same future-date guard as CREATE — historical source only covers dates 5+ days ago
+  const maxEnd = new Date();
+  maxEnd.setDate(maxEnd.getDate() - 5);
+  if (end > maxEnd)
+    return NextResponse.json({ error: "End date must be at least 5 days in the past (historical data source)." }, { status: 400 });
 
   let temps_json = existing.temps_json;
   // if the range changed, re-fetch the historical temps for the new range

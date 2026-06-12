@@ -40,6 +40,8 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch weather.");
       setWeather(data);
+      // reflect the resolved place name in the search box (esp. after "My location")
+      if (data?.place?.name) setQuery(data.place.name + (data.place.country ? `, ${data.place.country}` : ""));
     } catch (e) {
       setWeather(null);
       setError(e instanceof Error ? e.message : "Unexpected error.");
@@ -192,7 +194,7 @@ export default function Home() {
               <Stat label="Temperature" value={`${Math.round(t(weather.current.temp))}°${unit}`} />
               <Stat label="Feels like" value={`${Math.round(t(weather.current.feelsLike))}°${unit}`} />
               <Stat label="Humidity" value={`${weather.current.humidity}%`} />
-              <Stat label="Wind" value={`${weather.current.wind} ${weather.units.wind}`} />
+              <Stat label="Wind" value={unit === "F" ? `${Math.round(weather.current.wind * 0.621371)} mph` : `${weather.current.wind} km/h`} />
             </div>
 
             <h3 className="mt-7 mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">5-Day Forecast</h3>
@@ -236,7 +238,7 @@ export default function Home() {
 
           <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
             <span className="text-slate-400">Download your data as:</span>
-            {["json", "csv", "xml", "md"].map((f) => (
+            {["json", "csv", "xml", "md", "pdf"].map((f) => (
               <a key={f} href={`/api/export?format=${f}`} className="rounded-md border border-slate-700 px-3 py-1 uppercase hover:bg-slate-800">{f}</a>
             ))}
           </div>

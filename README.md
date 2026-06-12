@@ -24,9 +24,9 @@ A full-stack weather app: enter any location (city, zip/postal code, landmark, o
   - **READ** — list all saved records (and per-record GET).
   - **UPDATE** — change the date range (re-fetches temps) and/or notes, re-validated.
   - **DELETE** — remove a record.
-- **RESTful API** — clean JSON endpoints with proper status codes (200/201/400/404/502).
-- **Data export** — `/api/export?format=json|csv|xml|md`.
-- **Extra API integration (2.2)** — OpenStreetMap interactive map of the location, plus YouTube and Google Maps links.
+- **RESTful API** — clean JSON endpoints with proper status codes (200/201/400/404/502); CREATE **and** UPDATE both validate dates + location.
+- **Data export (2.3)** — `/api/export?format=json|csv|xml|md|pdf` — all five formats, each including the saved temperatures (avg/min/max). CSV is hardened against formula injection.
+- **Extra API integration (2.2)** — embedded OpenStreetMap map of the location, plus YouTube and Google Maps links. Geocoding uses Open-Meteo with an OpenStreetMap/Nominatim fallback (handles UK/Canada postcodes & landmarks) and BigDataCloud for reverse-geocoding the user's coordinates.
 
 ---
 
@@ -69,7 +69,9 @@ Dependencies are listed in **`package.json`** (the requirements file for this No
 | `GET` | `/api/records/:id` | Read one |
 | `PUT` | `/api/records/:id` | Update date range / notes (validated) |
 | `DELETE` | `/api/records/:id` | Delete |
-| `GET` | `/api/export?format=json\|csv\|xml\|md` | Export all records |
+| `GET` | `/api/export?format=json\|csv\|xml\|md\|pdf` | Export all records (with temperatures) |
+
+> **Persistence note:** records are stored in a local SQLite file (`weather.db`). This is intentional for a "clone & run" assessment. On serverless hosting (e.g. Vercel) the filesystem is ephemeral, so a hosted demo would need a managed DB (Postgres/Turso) — a one-line swap of the DB driver.
 
 ---
 

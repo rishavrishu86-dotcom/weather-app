@@ -48,6 +48,15 @@ export function describe(code: number) {
   return WMO[code] ?? { label: "Unknown", icon: "❓" };
 }
 
+/** Open-Meteo occasionally returns a rain/storm code with ZERO precipitation.
+ *  When the code says precipitation but there's none, downgrade to cloudy. */
+function adjusted(code: number, precipMm: number, rainChance: number | null) {
+  const isPrecipCode = code >= 51; // 51+ are drizzle/rain/snow/showers/thunderstorm
+  const dry = (precipMm ?? 0) <= 0 && (rainChance == null || rainChance <= 0);
+  if (isPrecipCode && dry) return describe(3); // overcast / cloudy
+  return describe(code);
+}
+
 /** Resolve a user's free-text location into coordinates.
  *  Accepts "lat,lon" coordinates directly, otherwise geocodes the name/zip. */
 export async function resolveLocation(input: string): Promise<Geo> {
@@ -68,8 +77,13 @@ export async function resolveLocation(input: string): Promise<Geo> {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("Geocoding service failed. Try again.");
   const data = await res.json();
-  if (!data.results || data.results.length === 0)
+  if (!data.results || data.results.length === 0) {
+    // Fallback: Open-Meteo geocoding misses many postcodes (UK/Canada) and landmarks.
+    // OpenStreetMap's Nominatim handles those, so try it before giving up.
+    const fb = await nominatim(trimmed);
+    if (fb) return fb;
     throw new Error(`Location "${trimmed}" not found. Check the spelling or try a city, zip code, or "lat,lon".`);
+  }
   const r = data.results[0];
   return {
     name: r.name,
@@ -81,12 +95,37 @@ export async function resolveLocation(input: string): Promise<Geo> {
   };
 }
 
+async function nominatim(q: string): Promise<Geo | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1`;
+    const res = await fetch(url, { cache: "no-store", headers: { "User-Agent": "weather-explorer-assessment/1.0" } });
+    if (!res.ok) return null;
+    const arr = await res.json();
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    const r = arr[0];
+    return {
+      name: r.name || r.display_name?.split(",")[0] || q,
+      country: r.address?.country ?? "",
+      admin1: r.address?.state,
+      latitude: parseFloat(r.lat),
+      longitude: parseFloat(r.lon),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Reverse geocode coordinates → a human place name.
+ *  Uses BigDataCloud (free, no key) — Open-Meteo's geocoder is name→coords only. */
 export async function reverseName(lat: number, lon: number): Promise<string> {
   try {
-    const url = `${GEO}?latitude=${lat}&longitude=${lon}&count=1`;
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
     const res = await fetch(url, { cache: "no-store" });
-    const data = await res.json();
-    if (data.results?.[0]) return `${data.results[0].name}, ${data.results[0].country ?? ""}`;
+    if (res.ok) {
+      const d = await res.json();
+      const place = d.city || d.locality || d.principalSubdivision;
+      if (place) return d.countryName ? `${place}, ${d.countryName}` : place;
+    }
   } catch {}
   return `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
 }
@@ -110,7 +149,7 @@ export async function getWeather(lat: number, lon: number) {
       wind: cur.wind_speed_10m,
       precipitation: cur.precipitation,
       isDay: cur.is_day === 1,
-      ...describe(cur.weather_code),
+      ...adjusted(cur.weather_code, cur.precipitation, null),
     },
     forecast: d.daily.time.map((date: string, i: number) => ({
       date,
@@ -119,7 +158,7 @@ export async function getWeather(lat: number, lon: number) {
       rainChance: d.daily.precipitation_probability_max[i],
       sunrise: d.daily.sunrise[i],
       sunset: d.daily.sunset[i],
-      ...describe(d.daily.weather_code[i]),
+      ...adjusted(d.daily.weather_code[i], 0, d.daily.precipitation_probability_max[i]),
     })),
     units: { temp: "°C", wind: "km/h" },
   };
