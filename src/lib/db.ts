@@ -8,7 +8,9 @@ import path from "path";
 let _db: Database.Database | null = null;
 function db(): Database.Database {
   if (_db) return _db;
-  _db = new Database(path.join(process.cwd(), "weather.db"));
+  // On Vercel the deployment filesystem is read-only — /tmp is the only writable
+  // path, so hosted records are ephemeral (documented in the README).
+  _db = new Database(process.env.VERCEL ? "/tmp/weather.db" : path.join(process.cwd(), "weather.db"));
   _db.pragma("journal_mode = WAL");
   _db.exec(`
     CREATE TABLE IF NOT EXISTS records (
